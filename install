@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+
+DIR="/usr/local/opt/clone-all"
+GITHUB_USER="chrisopedia"
+
+# Check for Homebrew; install brew
+if [ ! $(type -P 'brew') ]; then
+    printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Installing Homebrew"
+    ruby -e "$(curl -#fkL raw.github.com/Homebrew/homebrew/go/install)"
+
+    printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Running brew doctor"
+    brew doctor
+else
+    printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Updating Homebrew"
+    brew update
+    brew upgrade
+fi
+
+# Check for git; install git
+if [ ! $(type -P 'git') ]; then
+    printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Installing Git"
+    brew install git
+fi
+
+# Check for jq; install jq
+if [ ! $(type -P 'jq') ]; then
+    printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Installing jq"
+    brew install jq
+fi
+
+# Check for roundup; install roundup
+if [ ! $(type -P 'roundup') ]; then
+    printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Installing Roundup"
+    brew install roundup
+fi
+
+# If missing, download and extract the clone-all repository
+if [[ ! -d "${DIR}" ]]; then
+
+    # no bash directory found
+    printf "$(tput bold ; tput setaf 3)⚠ Warning: $(tput sgr0)%s!\n" "No ${DIR} found"
+
+    # create directory
+    printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Creating directory at ${DIR}"
+    mkdir -p "${DIR}"
+
+    # Download the repository as a tarball
+    printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Downloading repository to /tmp directory"
+    curl -#fLo /tmp/clone-all.tar.gz "https://github.com/${GITHUB_USER}/clone-all/tarball/master"
+
+    # Extract to the clone-all directory
+    printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Extracting files to ${DIR}"
+    tar -zxf /tmp/clone-all.tar.gz --strip-components 1 -C "${DIR}"
+
+    # Remove the tarball
+    printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Removing tarball from /tmp directory"
+    rm -rf /tmp/clone-all.tar.gz
+
+    printf "$(tput setaf 2)✓ Success: $(tput sgr0)%s.\n" "${DIR} created, repository downloaded and extracted"
+fi
+
+# Change to the clone-all directory
+cd "${DIR}"
+
+# Pull down the latest changes
+printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Pulling down latest changes"
+git pull --rebase origin master
+
+printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Symlinking ${DIR}/bin/clone-all to /usr/local/bin/clone-all"
+ln -fs "${DIR}/bin/clone-all" "/usr/local/bin/clone-all"
+
+printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Symlinking ${DIR}/share/man/man1/clone-all.1 to /usr/local/share/man/man1/clone-all.1"
+ln -fs "${DIR}/share/man/man1/clone-all.1" "/usr/local/share/man/man1/clone-all.1"
+
+if [ -h "/usr/local/bin/clone-all" ]; then
+    printf "$(tput setaf 2)✓ Success: $(tput sgr0)%s.\n" "clone-all has been installed"
+fi
