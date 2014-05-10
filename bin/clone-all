@@ -1,73 +1,74 @@
 #!/usr/bin/env bash
 
+# Check if git is installed, if not bail
+if ! type -P 'git' &> /dev/null; then
+	printf '%s⊘ Error:%s Git is required to use %s. Aborting!\n' "$(tput setaf 1)" "$(tput sgr0)" "$(basename "$0")"
+	printf '\n'
+	printf 'Download it at http://git-scm.com\n'
+	exit 2
+fi
+
+# Check if jq is installed, if not bail
+if ! type -P 'jq' &> /dev/null; then
+	printf '%s⊘ Error:%s jq is required to parse JSON. Aborting!\n' "$(tput setaf 1)" "$(tput sgr0)"
+	printf '\n'
+	printf 'Download it at http://stedolan.github.io/jq\n'
+	exit 2
+fi
+
 # variables
 feed="repos"
 path="${HOME}/Downloads"
 usage="$(basename "$0"): usage: $(basename "$0") [-h|--help] [-v|--version] [-f|--feed <value>] <github_username> [<path>]"
 
-# Check if git is installed, if not bail
-if [ ! $(type -P 'git') ]; then
-	printf "$(tput setaf 1)⊘ Error:$(tput sgr0) %s. Aborting!\n" "Git is required to use $(basename $0)"
-	exit 1
-fi
-
-# Check if jq is installed, if not bail
-if [ ! $(type -P 'jq') ]; then
-	printf "$(tput setaf 1)⊘ Error:$(tput sgr0) %s. Aborting!\n" "This script requires jq to parse JSON.\n" 
-	printf "\n"
-	printf "$(tput setaf 1)Download it at http://stedolan.github.io/jq/. Aborting!$(tput sgr0)"
-	exit 1
-fi
-
-# Help text
-if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
-cat <<EOT
-
-Options:
-	-h, --help              Print this help text
-	-f, --feed              <value> can be either gists or repos, default is repos
-	-v, --version           Print out the version
-
-Documentation can be found at https://github.com/chriopedia/clone-all/
-EOT
-	exit 0
-fi
-
-# Version of software
-if [ "$1" == "-v" ] || [ "$1" == "--version" ]; then
-	printf "Version $(git describe --tags)\n"
-	exit 0
-fi
-
 # Test for known flags
-while :
+for opt in "$@"
 do
-	case "$1" in
-		-f | --feed)
-			if [ ! -z "$2" ] && [ "$2" == "gists" ]; then
+	case "$opt" in
+		-f | --feed) # choose feed type
+			if [[ "$2" == "repos" || "$2" == "gists" ]]; then
 				feed="$2"
+			else
+				printf '%sbash: %s: %s: invalid feed type [repos|gists]\n' "-" "$(basename "$0")" "$1"
+				printf '%s\n' "$usage"
+				exit 1
 			fi
 			shift 2
 			;;
-		--test)
-			# test suite using roundup
-			roundup=$(type -P 'roundup')
-			[ ! -z $roundup ] || {
-				printf "$(tput setaf 1)⊘ Error:$(tput sgr0) %s\n" "roundup library is missing!"
-				printf "Check out https://github.com/bmizerany/roundup for instructions on installing roundup."
-				exit 1;
+		-h | --help) # Help text
+			printf '\n'
+			printf 'Options\n'
+			printf '\n'
+			printf '\t-h, --help              Print this help text\n'
+			printf '\t-f, --feed [<value>]    <value> can be either gists or repos, default is repos\n'
+			printf '\t-v, --version           Print out the version\n'
+			printf '\n'
+			printf 'Documentation can be found at https://github.com/chriopedia/clone-all\n'
+			exit 0
+			;;
+		--test) # test suite using roundup
+			roundup="$(type -P 'roundup')"
+			[[ ! -z $roundup ]] || {
+				printf '%s⊘ Error:%s Roundup is required to run tests. Aborting!\n' "$(tput setaf 1)" "$(tput sgr0)"
+				printf '\n'
+				printf 'Download it at https://github.com/bmizerany/roundup\n'
+				exit 2;
 			}
 			$roundup ./tests/*.sh
 			exit 0
 			;;
+		-v | --version) # Version of software
+			printf 'Version %s\n' "$(git describe --tags)"
+			exit 0
+			;;
 		--) # End of all options
-			printf "%s\n" "-bash: $(basename "$0"): $1: invalid option"
-			printf "%s" "$usage"
+			printf '%sbash: %s: %s: invalid option\n' "-" "$(basename "$0")" "$1"
+			printf '%s\n' "$usage"
 			exit 1
 			;;
 		-*)
-			printf "%s\n" "-bash: $(basename "$0"): $1: invalid option"
-			printf "%s" "$usage"
+			printf '%sbash: %s: %s: invalid option\n' "-" "$(basename "$0")" "$1"
+			printf '%s\n' "$usage"
 			exit 1
 			;;
 		*)  # No more options
@@ -76,16 +77,22 @@ do
 	esac
 done
 
+# Check if username is passed in, if not bail
+if [[ -z "$1" ]]; then
+	printf '%s⊘ Error:%s A valid Github user is required. Aborting!\n' "$(tput setaf 1)" "$(tput sgr0)"
+	exit 3
+fi
+
 # check if directory is not blank and exists
-if [ ! -z "$2" ] && [ -d "$2" ]; then
+if [[ ! -z "$2" && -d "$2" ]]; then
 	# http://www.linuxforums.org/forum/programming-scripting/solved-delete-trailing-slashes-using-bash-board-means-print-172714.html
 	# This matches from the start of the source string, any 
 	# string ending with a non-slash.
-	pattern='^.*[^/]'
+	pattern="^.*[^/]"
 	# Apply regex
 	[[ ${2} =~ $pattern ]]
 	# Print the portion of the source string which matched the regex.
-	path=${BASH_REMATCH[0]}
+	path="${BASH_REMATCH[0]}"
 fi
 
 # set some variables
@@ -94,40 +101,40 @@ api_url="https://api.github.com/users/${user}/${feed}"
 current_page=1
 per_page=100
 
-printf "%s" "Checking status of user '${user}'"
+printf 'Checking status of user "%s"' "${user}"
 # http://stackoverflow.com/questions/238073/how-to-add-a-progress-bar-to-a-shell-script
 # start progress bar
 while :;do echo -n .;sleep 1;done &
 
 # check response header from github user passed in
 # http://stackoverflow.com/a/10724976/1536779
-response=$(curl --write-out %{http_code} --silent --output /dev/null "${api_url}")
-
-# if reponse is greater than or equal to 400 somethings wrong
-if [[ "${response}" -ge 400 ]]; then
-	printf "%s\n" "-bash: $(basename "$0"): $1: user doesn't exist"
-	#debug statement
-	printf "Github HTTP Response code: ${response}\n"
-	exit 1
-fi
-
-# grab the total number of pages there are
-# https://gist.github.com/michfield/4525251
-total_pages=$(curl -sI "${api_url}?page=1&per_page=${per_page}" | sed -nE "s/^Link:.*page=([0-9]+)&per_page=${per_page}>; rel=\"last\".*/\1/p")
-if [ -z "${total_pages}" ]; then
-	total_pages=1
-fi
+response="$(curl --write-out %{http_code} --silent --output /dev/null "${api_url}")"
 
 # kill the progress bar
 kill $!; trap 'kill $!' SIGTERM
-printf "\n"
+
+# if reponse is greater than or equal to 400 somethings wrong
+if [[ "${response}" -ge 400 ]]; then
+	printf '%sbash: %s: %s: user doesnt exist\n' "-" "$(basename "$0")" "$1"
+	#debug statement
+	printf 'Github HTTP Response code: %s\n' "${response}"
+	exit 3
+fi
+
+
+# grab the total number of pages there are
+# https://gist.github.com/michfield/4525251
+total_pages="$(curl -sI "${api_url}?page=1&per_page=${per_page}" | sed -nE "s/^Link:.*page=([0-9]+)&per_page=${per_page}>; rel=\"last\".*/\1/p")"
+if [[ -z ${total_pages} ]]; then
+	total_pages=1
+fi
 
 # grab a list of repos or gists
 # @params $1: page number
 # example: get_repos_list 1
 get_repos_list() {
 	# get a json list of all repos and story as array
-	if [ "${feed}" != "gists" ]; then
+	if [[ ${feed} != 'gists' ]]; then
 		repos=$(curl -fsSL "${api_url}?page=${1}&per_page=${per_page}" | jq '.[] | .name')
 	else
 		repos=$(curl -fsSL "${api_url}?page=${1}&per_page=${per_page}" | jq '.[] | .id')
@@ -137,8 +144,17 @@ get_repos_list() {
 
 # loop through list of repos at the current page
 clone_shit() {
+	printf 'Grabbing list of %s for %s' "${feed}" "${user}"
+	# http://stackoverflow.com/questions/238073/how-to-add-a-progress-bar-to-a-shell-script
+	# start progress bar
+	while :;do echo -n .;sleep 1;done &
+
 	# get the list of repos for user
 	repos_list=($(get_repos_list "${current_page}"))
+
+	# kill the progress bar
+	kill $!; trap 'kill $!' SIGTERM
+	printf '\n'
 
 	# loop through all repos in array
 	for index in ${!repos_list[*]}
@@ -148,20 +164,20 @@ clone_shit() {
 		# Strip quotes from string
 		repo="${repo:1:${#repo}-2}"
 
-		if [ "${feed}" != "gists" ]; then
-			printf "Cloning https://github.com/${user}/${repo} to ${path}/repos/${repo}\n"
+		if [[ ${feed} != "gists" ]]; then
+			printf 'Cloning https://github.com/%s/%s to %s/repos/%s\n' "${user}" "${repo}" "${path}" "${repo}"
 			git clone "https://github.com/${user}/${repo}" "${path}/repos/${repo}"
 		else
-			printf "Cloning https://gist.github.com/${repo}.git to ${path}/gists/${repo}\n"
+			printf 'Cloning https://gist.github.com/%s.git to %s/gists/%s\n' "${repo}" "${path}" "${repo}"
 			git clone "https://gist.github.com/${repo}.git" "${path}/gists/${repo}"
 		fi
 	done
 }
 
-printf "\n"
+printf '\n'
 
 clone_shit
-if [ ${total_pages} -gt 1 ] && [ ${current_page} -lt ${total_pages} ]; then
+if [[ ${total_pages} -gt 1 && ${current_page} -lt ${total_pages} ]]; then
 	current_page=$((current_page + 1))
 	clone_shit
 fi
