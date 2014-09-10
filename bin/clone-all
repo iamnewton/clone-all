@@ -166,10 +166,10 @@ clone_shit() {
 
 		if [[ ${feed} != "gists" ]]; then
 			printf 'Cloning https://github.com/%s/%s to %s/repos/%s\n' "${user}" "${repo}" "${path}" "${repo}"
-			git clone "https://github.com/${user}/${repo}" "${path}/repos/${repo}"
+			git clone "https://github.com/${user}/${repo}" "${path}/${repo}"
 		else
 			printf 'Cloning https://gist.github.com/%s.git to %s/gists/%s\n' "${repo}" "${path}" "${repo}"
-			git clone "https://gist.github.com/${repo}.git" "${path}/gists/${repo}"
+			git clone "https://gist.github.com/${repo}.git" "${path}/${repo}"
 		fi
 	done
 }
