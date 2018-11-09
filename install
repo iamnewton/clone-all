@@ -62,10 +62,6 @@ fi
 # Change to the clone-all directory
 cd "${DIR}"
 
-# Pull down the latest changes
-printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Pulling down latest changes"
-git pull --rebase origin master
-
 printf "$(tput setaf 6)┃ $(tput sgr0)$(tput setaf 7)%s...$(tput sgr0)\n" "Symlinking ${DIR}/bin/clone-all to /usr/local/bin/clone-all"
 ln -fs "${DIR}/bin/clone-all" "/usr/local/bin/clone-all"
 
