@@ -18,7 +18,7 @@ clone-all(1) is a [shell script][bin], so installation is simple.  [Download][do
 ## One-line installation
 
 ```bash
-$ bash -c "$(curl -fsSL raw.github.com/chrisopedia/clone-all/go/install)"
+$ bash -c "$(curl -fsSL raw.github.com/iamnewton/clone-all/go/install)"
 ```
 
 N.B. - using the one-line installation will download and install all of the dependencies, including the man page.
@@ -56,12 +56,12 @@ Inspiration and code was taken from many sources, but mostly from StackOverflow:
 * [Github API pagination via curl](https://gist.github.com/michfield/4525251)
 * [How to check if a program exists from a bash script?](http://stackoverflow.com/a/677212)
 
-[bin]: https://github.com/chrisopedia/clone-all/blob/master/clone-all
-[dotfiles]: https://github.com/chrisopedia/dotfiles
-[download]: https://github.com/chrisopedia/clone-all/archive/master.zip
+[bin]: https://github.com/iamnewton/clone-all/blob/master/clone-all
+[dotfiles]: https://github.com/iamnewton/dotfiles
+[download]: https://github.com/iamnewton/clone-all/archive/master.zip
 [github]: https://github.com/join
 [git]: http://git-scm.com
 [homebrew]: http://brew.sh
 [jq]: https://stedolan.github.io/jq/
-[osxdefaults]: https://github.com/chrisopedia/osxdefaults
+[osxdefaults]: https://github.com/iamnewton/osxdefaults
 [roundup]: https://github.com/bmizerany/roundup
