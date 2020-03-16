@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 DIR="/usr/local/opt/clone-all"
-GITHUB_USER="chrisopedia"
+GITHUB_USER="iamnewton"
 
 # Check for Homebrew; install brew
 if [ ! $(type -P 'brew') ]; then
